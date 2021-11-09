@@ -1,0 +1,80 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:time_tracker_flutter_course/app/home/jobs/jobs_page.dart';
+import 'package:time_tracker_flutter_course/services/auth.dart';
+
+class VerifyPage extends StatefulWidget {
+  const VerifyPage({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<VerifyPage> createState() => _VerifyPageState();
+}
+
+class _VerifyPageState extends State<VerifyPage> {
+  late AuthBase auth;
+  late Timer timer;
+  User? user;
+  bool isUserEmailVerified = false;
+
+  @override
+  void initState() {
+    super.initState();
+    auth = Auth();
+    user = auth.currentUser;
+    user?.sendEmailVerification();
+    timer = Timer.periodic(
+      const Duration(
+        seconds: 5,
+      ),
+      (timer) {
+        checkEmailVerified();
+      },
+    );
+  }
+
+  Future<void> checkEmailVerified() async {
+    user = auth.currentUser;
+    await user?.reload();
+    final signedInUser = user;
+    if (signedInUser != null && signedInUser.emailVerified) {
+      timer.cancel();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const JobsPage(),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: Container(),
+        title: const Text('Verify Email'),
+      ),
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'An email has just been sent to your email.  Click on the link provided to complete registration.',
+            style: TextStyle(
+              fontSize: 20.0,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
