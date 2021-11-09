@@ -1,0 +1,145 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:time_tracker_flutter_course/app/sign_in/validators.dart';
+import 'package:time_tracker_flutter_course/services/auth.dart';
+
+import 'email_sign_in_model.dart';
+
+class EmailSignInChangeModel with EmailAndPasswordValidators, ChangeNotifier {
+  EmailSignInChangeModel({
+    required this.auth,
+    this.email = '',
+    this.password = '',
+    this.formType = EmailSignInFormType.signIn,
+    this.isLoading = false,
+    this.isSubmitted = false,
+  });
+
+  final AuthBase auth;
+  String email;
+  String password;
+  EmailSignInFormType formType;
+  bool isLoading;
+  bool isSubmitted;
+
+  Future<User?> submit() async {
+    updateWith(
+      isLoading: true,
+      isSubmitted: true,
+    );
+
+    try {
+      if (formType == EmailSignInFormType.signIn) {
+        await auth.signInWithEmailAndPassword(
+          email,
+          password,
+        );
+      } else {
+        await auth.createUserWithEmailAndPassword(
+          email,
+          password,
+        );
+      }
+    } catch (e) {
+      updateWith(
+        isLoading: false,
+        isSubmitted: false,
+      );
+      rethrow;
+    }
+  }
+
+  Future<User?> submitVerify(context) async {
+    updateWith(
+      isLoading: true,
+      isSubmitted: true,
+    );
+
+    try {
+      if (formType == EmailSignInFormType.signIn) {
+        await auth.signInWithEmailAndPassword(
+          email,
+          password,
+        );
+      } else {
+        await auth.createUserWithEmailAndPasswordVerify(
+          email,
+          password,
+        );
+      }
+    } catch (e) {
+      updateWith(
+        isLoading: false,
+        isSubmitted: false,
+      );
+      rethrow;
+    }
+  }
+
+  String get primaryButtonText {
+    return formType == EmailSignInFormType.signIn
+        ? 'Sign In'
+        : 'Create an account';
+  }
+
+  String get secondaryButtonText {
+    return formType == EmailSignInFormType.signIn
+        ? 'Need an account? Register'
+        : 'Have an account? Sign In';
+  }
+
+  String get forgotPasswordText {
+    return formType == EmailSignInFormType.signIn ? 'Forgot Password?' : '';
+  }
+
+  bool get canSubmit {
+    return emailValidator.isValid(email) &&
+        passwordValidator.isValid(password) &&
+        !isLoading;
+  }
+
+  String? get passwordErrorText {
+    bool showErrorText = isSubmitted && !passwordValidator.isValid(password);
+    return showErrorText ? invalidPasswordErrorText : null;
+  }
+
+  String? get emailErrorText {
+    bool showErrorText = isSubmitted && !emailValidator.isValid(email);
+    return showErrorText ? invalidEmailErrorText : null;
+  }
+
+  void toggleFormType() {
+    final formType = this.formType == EmailSignInFormType.signIn
+        ? EmailSignInFormType.register
+        : EmailSignInFormType.signIn;
+    updateWith(
+      email: '',
+      password: '',
+      formType: formType,
+      isLoading: false,
+      isSubmitted: false,
+    );
+  }
+
+  void updateEmail(String email) => updateWith(
+        email: email,
+      );
+  void updatePassword(String password) => updateWith(
+        password: password,
+      );
+
+  void updateWith({
+    String? email,
+    String? password,
+    EmailSignInFormType? formType,
+    bool? isLoading,
+    bool? isSubmitted,
+  }) {
+    this.email = email ?? this.email;
+    this.password = password ?? this.password;
+    this.formType = formType ?? this.formType;
+    this.isLoading = isLoading ?? this.isLoading;
+    this.isSubmitted = isSubmitted ?? this.isSubmitted;
+    notifyListeners();
+  }
+}
